@@ -1,0 +1,79 @@
+- name: Create Prometheus user
+  user:
+    name: "{{ prometheus_user }}"
+    system: yes
+    shell: /bin/false
+
+- name: Create directories for Prometheus
+  file:
+    path: "{{ prometheus_install_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_user }}"
+    mode: '0755'
+  loop:
+    - bin
+    - config
+    - data
+
+- name: Download Prometheus archive
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp/prometheus.tar.gz
+
+- name: Unarchive Prometheus
+  unarchive:
+    src: /tmp/prometheus.tar.gz
+    dest: /tmp/
+    remote_src: yes
+
+- name: Copy Prometheus binaries
+  copy:
+    src: "{{ item }}"
+    dest: "{{ prometheus_install_dir }}/bin"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_user }}"
+    mode: '0755'
+  loop:
+    - "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus"
+    - "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/promtool"
+
+- name: Create Prometheus config file
+  copy:
+    dest: "{{ prometheus_install_dir }}/config/prometheus.yml"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_user }}"
+    mode: '0644'
+    content: |
+      global:
+        scrape_interval: 15s
+      scrape_configs:
+        - job_name: "node"
+          static_configs:
+            - targets: ["{{ node_exporter_target }}"]
+
+- name: Create Prometheus systemd service
+  copy:
+    dest: /etc/systemd/system/prometheus.service
+    content: |
+      [Unit]
+      Description=Prometheus
+      After=network.target
+
+      [Service]
+      User={{ prometheus_user }}
+      ExecStart={{ prometheus_install_dir }}/bin/prometheus \
+        --config.file={{ prometheus_install_dir }}/config/prometheus.yml \
+        --storage.tsdb.path={{ prometheus_install_dir }}/data \
+        --storage.tsdb.retention.size={{ prometheus_retention_size }} \
+        --storage.tsdb.retention.time={{ prometheus_retention_time }}
+      Restart=on-failure
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Start Prometheus
+  systemd:
+    name: prometheus
+    enabled: yes
+    state: started

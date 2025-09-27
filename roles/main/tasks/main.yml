@@ -1,0 +1,12 @@
+- name: Set a hostname
+  ansible.builtin.hostname:
+    name: monitoring-server.local
+
+- name: Set timezone
+  community.general.timezone:
+    name: Europe/Moscow
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600

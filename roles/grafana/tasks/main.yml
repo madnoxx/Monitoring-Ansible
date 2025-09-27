@@ -1,0 +1,38 @@
+- name: Install Grafana
+  apt:
+    name: grafana
+    state: present
+    update_cache: yes
+
+- name: Start Grafana
+  systemd:
+    name: grafana-server
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: Wait for Grafana to start
+  wait_for:
+    host: "{{ grafana_host }}"
+    port: "{{ grafana_port }}"
+    timeout: 30
+
+- name: Create Prometheus datasource
+  community.grafana.grafana_datasource:
+    name: Prometheus
+    ds_type: prometheus
+    ds_url: "{{ prometheus_url }}"
+    grafana_url: "http://{{ grafana_host }}:{{ grafana_port }}"
+    grafana_user: "{{ grafana_admin_user }}"
+    grafana_password: "{{ grafana_admin_password }}"
+    access: proxy
+    is_default: true
+
+- name: Import Node Exporter dashboard
+  community.grafana.grafana_dashboard:
+    grafana_url: "http://{{ grafana_host }}:{{ grafana_port }}"
+    grafana_user: "{{ grafana_admin_user }}"
+    grafana_password: "{{ grafana_admin_password }}"
+    state: present
+    overwrite: true
+    dashboard_url: "https://grafana.com/api/dashboards/{{ grafana_node_dashboard_id }}/revisions/{{ grafana_node_dashboard_revision }}/download"

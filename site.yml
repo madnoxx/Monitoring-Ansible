@@ -1,0 +1,9 @@
+- hosts: monitoring
+  become: true
+  vars_files:
+    - vars.yml
+  roles:
+    - main
+    - node_exporter
+    - prometheus
+    - grafana

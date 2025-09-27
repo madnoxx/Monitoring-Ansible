@@ -1,0 +1,22 @@
+node_exporter_version: "1.9.1"
+node_exporter_user: "nodeusr"
+node_exporter_port: 9100
+node_exporter_install_dir: "/srv/node_exporter"
+
+prometheus_version: "3.5.0"
+prometheus_user: "prometheus_usr"
+prometheus_install_dir: "/srv/prometheus"
+prometheus_retention_size: "10GB"
+prometheus_retention_time: "15d"
+
+node_exporter_target: "localhost:9100"
+
+grafana_host: "localhost"
+grafana_port: 3000
+grafana_admin_user: "admin"
+grafana_admin_password: "admin"
+
+prometheus_url: "http://localhost:9090"
+
+grafana_node_dashboard_id: 1860
+grafana_node_dashboard_revision: 41
